@@ -20,8 +20,8 @@
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold text-gray-800"><i class="fas fa-home text-blue-600 mr-2"></i> Gastos Vecinales 2026</h1>
             <div class="flex gap-2">
-                <button id="btn-seed" onclick="subirDatosAFirebase()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm transition hidden">
-                    <i class="fas fa-cloud-upload-alt mr-1"></i> Subir Datos Iniciales
+                <button id="btn-seed" onclick="borrarYSubirDatos()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm transition hidden font-bold">
+                    <i class="fas fa-sync-alt mr-1"></i> Borrar todo y subir limpio
                 </button>
                 
                 <button id="btn-unlock" onclick="pedirCodigo()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition">
@@ -63,7 +63,6 @@
                                 <th class="px-4 py-3 text-right font-bold text-green-300">Aportes Vecinos</th>
                                 <th class="px-4 py-3 text-right font-bold text-green-300">Otros Ingresos</th>
                                 <th class="px-4 py-3 text-right font-bold text-green-200">Ingresos Totales</th>
-                                <th class="px-4 py-3 text-right font-bold text-yellow-300">Saldo Mes</th>
                                 <th class="px-4 py-3 text-right font-bold text-blue-300">Acumulado</th>
                             </tr>
                         </thead>
@@ -109,7 +108,6 @@
                     <label class="block text-sm font-medium">Seguro ($)</label>
                     <input type="number" id="gasto-seguro" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
                 </div>
-                <!-- NUEVO CAMPO -->
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-green-700 font-bold">Otros Ingresos ($)</label>
                     <input type="number" id="gasto-otros-ingresos" class="mt-1 block w-full rounded-md border-green-300 shadow-sm p-2 border bg-green-50" placeholder="Ej: Venta de rifas, donaciones, etc.">

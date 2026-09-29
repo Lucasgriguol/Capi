@@ -1,10 +1,7 @@
 // app.js
 
-// ==========================================
-// 1. CONFIGURACIÓN E IMPORTACIÓN DE FIREBASE
-// ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAFZBsmx7Jep5XLSm2rJNU7xus1WWZ6izs",
@@ -18,15 +15,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// ==========================================
-// 2. ESTADO GLOBAL Y DATOS LOCALES
-// ==========================================
 let datosMeses = JSON.parse(JSON.stringify(datosIniciales));
 let isAdmin = false; 
 
-// ==========================================
-// 3. INICIALIZACIÓN Y SINCRONIZACIÓN
-// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     initUI();
     calcularYRenderizar();
@@ -57,28 +48,32 @@ function escucharCambiosFirebase() {
     });
 }
 
-// ==========================================
-// 4. FUNCIÓN PARA SUBIR DATOS INICIALES A FIREBASE
-// ==========================================
-window.subirDatosAFirebase = async function() {
-    if (!confirm("¿Estás seguro de subir los datos locales a Firebase? Esto guardará toda la información de data.js en la nube.")) return;
+// NUEVA FUNCIÓN: Borra todo en Firebase y sube los datos limpios
+window.borrarYSubirDatos = async function() {
+    if (!confirm("¡ATENCIÓN! Esto borrará TODOS los datos actuales en Firebase y los reemplazará por los de la planilla base. ¿Estás seguro?")) return;
     
     try {
-        for (const mesData of datosMeses) {
+        // 1. Borrar todos los documentos existentes
+        const querySnapshot = await getDocs(collection(db, "registros_mensuales"));
+        const promesasBorrado = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(promesasBorrado);
+        console.log("Base de datos limpia.");
+
+        // 2. Subir los datos nuevos desde data.js
+        for (const mesData of datosIniciales) {
             const docId = `2026-${mesData.mes}`;
             await setDoc(doc(db, "registros_mensuales", docId), mesData);
         }
-        alert("¡Datos subidos con éxito a Firebase! Ahora todos los vecinos pueden verlos.");
+        
+        alert("¡Base de datos reseteada con éxito! El error de los $592 ha sido eliminado.");
         document.getElementById('btn-seed').classList.add('hidden');
     } catch (error) {
-        console.error("Error al subir datos: ", error);
-        alert("Hubo un error al subir los datos. Revisa la consola.");
+        console.error("Error al resetear datos: ", error);
+        alert("Hubo un error. Revisa la consola.");
     }
 }
 
-// ==========================================
-// 5. LÓGICA DE ACCESO (CÓDIGO 1965)
-// ==========================================
+// LÓGICA DE ACCESO
 window.pedirCodigo = function() {
     const codigo = prompt("Ingrese el código de administrador para editar:");
     if (codigo === "1965") {
@@ -104,15 +99,12 @@ window.cerrarSesion = function() {
     showTab('resumen');
 }
 
-// ==========================================
-// 6. RENDERIZADO Y CÁLCULOS
-// ==========================================
+// CÁLCULOS Y RENDERIZADO
 function calcularYRenderizar() {
     const tbody = document.getElementById('tabla-resumen');
     if (!tbody) return;
     tbody.innerHTML = '';
     
-    // CAMBIO CLAVE: Arrancamos el acumulado desde el saldo anterior
     let acumulado = saldoAnterior; 
 
     datosMeses.forEach((data, index) => {
@@ -140,9 +132,6 @@ function calcularYRenderizar() {
             <td class="px-4 py-3 text-right font-semibold text-green-600">$${totalAportes.toLocaleString('es-AR')}</td>
             <td class="px-4 py-3 text-right text-green-700">$${otrosIngresos.toLocaleString('es-AR')}</td>
             <td class="px-4 py-3 text-right font-bold text-green-800 bg-green-50">$${totalIngresos.toLocaleString('es-AR')}</td>
-            <td class="px-4 py-3 text-right font-bold ${saldoMes >= 0 ? 'text-green-700' : 'text-red-700'}">
-                ${saldoMes >= 0 ? '+' : ''}$${saldoMes.toLocaleString('es-AR')}
-            </td>
             <td class="px-4 py-3 text-right font-bold ${acumulado >= 0 ? 'text-blue-700' : 'text-red-700'} bg-blue-50">
                 $${acumulado.toLocaleString('es-AR')}
             </td>
@@ -187,9 +176,7 @@ function renderizarDetalleAportes() {
     });
 }
 
-// ==========================================
-// 7. MANEJO DE FORMULARIOS
-// ==========================================
+// FORMULARIOS
 function initUI() {
     const selectGastos = document.getElementById('gasto-mes');
     const selectAportes = document.getElementById('aporte-mes');
@@ -266,7 +253,7 @@ async function guardarGastos(e) {
     const docId = `2026-${data.mes}`;
     try {
         await setDoc(doc(db, "registros_mensuales", docId), data, { merge: true });
-        alert('Gastos y Otros Ingresos guardados y sincronizados');
+        alert('Gastos y Otros Ingresos guardados');
     } catch (error) {
         console.error("Error al guardar: ", error);
         alert('Error al guardar en la nube');
@@ -288,16 +275,13 @@ async function guardarAportes(e) {
     try {
         await setDoc(doc(db, "registros_mensuales", docId), data, { merge: true });
         document.getElementById('aporte-monto').value = '';
-        alert(`Pago de ${vecino} registrado y sincronizado para el mes de ${data.mes}`);
+        alert(`Pago de ${vecino} registrado para ${data.mes}`);
     } catch (error) {
         console.error("Error al guardar: ", error);
         alert('Error al guardar en la nube');
     }
 }
 
-// ==========================================
-// 8. NAVEGACIÓN
-// ==========================================
 window.showTab = function(tabId) {
     if (!isAdmin && (tabId === 'gastos' || tabId === 'aportes')) {
         alert("Acceso denegado. Ingrese el código primero.");

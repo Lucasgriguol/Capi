@@ -1,14 +1,14 @@
 // data.js
 const personas = ["Cristina", "Gaby", "Genaro", "Mariana", "Cristian", "Mauricio", "Marta", "Fernanda"];
 
-// Saldo que venían arrastrando del año anterior para que coincida con la planilla de papel
+// Saldo que venían arrastrando del año anterior
 const saldoAnterior = 285106; 
 
 const datosIniciales = [
     {
         mes: "Enero",
-        gastos: { epec: 32346, internet: 6000, seguro: 9529, extras: [] },
-        otrosIngresos: 6000, // <-- Agregado
+        gastos: { epec: 32346, internet: 10000, seguro: 9529, extras: [] }, // Internet 10000 según tu tabla
+        otrosIngresos: 6000, 
         aportes: { Cristina: 10000, Gaby: 10000, Genaro: 10000, Mariana: 4000, Cristian: 10000, Mauricio: 10000, Marta: 10000, Fernanda: 10000 }
     },
     {
@@ -69,7 +69,7 @@ const datosIniciales = [
     {
         mes: "Octubre",
         gastos: { epec: 47650, internet: 0, seguro: 0, extras: [] },
-        otrosIngresos: 6000, // Le dejamos 6000 aunque no esté el dato completo en la foto 3
+        otrosIngresos: 6000, 
         aportes: { Cristina: 12000, Gaby: 12000, Genaro: 12000, Mariana: 6000, Cristian: 12000, Mauricio: 12000, Marta: 12000, Fernanda: 12000 }
     },
     {
