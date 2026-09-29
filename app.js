@@ -48,24 +48,20 @@ function escucharCambiosFirebase() {
     });
 }
 
-// NUEVA FUNCIÓN: Borra todo en Firebase y sube los datos limpios
 window.borrarYSubirDatos = async function() {
     if (!confirm("¡ATENCIÓN! Esto borrará TODOS los datos actuales en Firebase y los reemplazará por los de la planilla base. ¿Estás seguro?")) return;
     
     try {
-        // 1. Borrar todos los documentos existentes
         const querySnapshot = await getDocs(collection(db, "registros_mensuales"));
         const promesasBorrado = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
         await Promise.all(promesasBorrado);
-        console.log("Base de datos limpia.");
 
-        // 2. Subir los datos nuevos desde data.js
         for (const mesData of datosIniciales) {
             const docId = `2026-${mesData.mes}`;
             await setDoc(doc(db, "registros_mensuales", docId), mesData);
         }
         
-        alert("¡Base de datos reseteada con éxito! El error de los $592 ha sido eliminado.");
+        alert("¡Base de datos reseteada con éxito!");
         document.getElementById('btn-seed').classList.add('hidden');
     } catch (error) {
         console.error("Error al resetear datos: ", error);
@@ -73,7 +69,6 @@ window.borrarYSubirDatos = async function() {
     }
 }
 
-// LÓGICA DE ACCESO
 window.pedirCodigo = function() {
     const codigo = prompt("Ingrese el código de administrador para editar:");
     if (codigo === "1965") {
@@ -99,14 +94,11 @@ window.cerrarSesion = function() {
     showTab('resumen');
 }
 
-// CÁLCULOS Y RENDERIZADO
 function calcularYRenderizar() {
     const tbody = document.getElementById('tabla-resumen');
     if (!tbody) return;
     tbody.innerHTML = '';
     
-    let acumulado = saldoAnterior; 
-
     datosMeses.forEach((data, index) => {
         const totalExtras = data.gastos.extras.reduce((sum, item) => sum + item.monto, 0);
         const totalEgresos = data.gastos.epec + data.gastos.internet + data.gastos.seguro + totalExtras;
@@ -115,8 +107,8 @@ function calcularYRenderizar() {
         const otrosIngresos = data.otrosIngresos || 0;
         const totalIngresos = totalAportes + otrosIngresos;
 
-        const saldoMes = totalIngresos - totalEgresos;
-        acumulado += saldoMes;
+        // AHORA EL ACUMULADO ES SOLO LA RESTA DEL MES
+        const acumulado = totalIngresos - totalEgresos;
 
         const tr = document.createElement('tr');
         tr.className = index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
@@ -176,7 +168,6 @@ function renderizarDetalleAportes() {
     });
 }
 
-// FORMULARIOS
 function initUI() {
     const selectGastos = document.getElementById('gasto-mes');
     const selectAportes = document.getElementById('aporte-mes');
@@ -253,7 +244,7 @@ async function guardarGastos(e) {
     const docId = `2026-${data.mes}`;
     try {
         await setDoc(doc(db, "registros_mensuales", docId), data, { merge: true });
-        alert('Gastos y Otros Ingresos guardados');
+        alert('Datos del mes guardados y sincronizados');
     } catch (error) {
         console.error("Error al guardar: ", error);
         alert('Error al guardar en la nube');
