@@ -31,18 +31,14 @@ document.addEventListener('DOMContentLoaded', () => {
     initUI();
     calcularYRenderizar();
     renderizarDetalleAportes();
-    escucharCambiosFirebase(); // <-- Nueva función
+    escucharCambiosFirebase(); 
 });
 
-// Escucha los cambios en Firestore en tiempo real
 function escucharCambiosFirebase() {
     const coleccionRef = collection(db, "registros_mensuales");
     
     onSnapshot(coleccionRef, (snapshot) => {
-        if (snapshot.empty) {
-            console.log("La base de datos está vacía. Usa el botón 'Subir Datos Iniciales' en modo edición.");
-            return;
-        }
+        if (snapshot.empty) return;
 
         const mesesFirebase = {};
         snapshot.forEach((doc) => {
@@ -50,15 +46,12 @@ function escucharCambiosFirebase() {
             mesesFirebase[data.mes] = data;
         });
 
-        // Actualizar el array local con los datos de Firebase
         datosMeses = datosMeses.map(mesLocal => {
             return mesesFirebase[mesLocal.mes] ? mesesFirebase[mesLocal.mes] : mesLocal;
         });
 
-        // Volver a renderizar las tablas con los datos actualizados
         calcularYRenderizar();
         renderizarDetalleAportes();
-        console.log("Datos sincronizados con Firebase en tiempo real.");
     }, (error) => {
         console.error("Error al escuchar Firebase: ", error);
     });
@@ -76,7 +69,7 @@ window.subirDatosAFirebase = async function() {
             await setDoc(doc(db, "registros_mensuales", docId), mesData);
         }
         alert("¡Datos subidos con éxito a Firebase! Ahora todos los vecinos pueden verlos.");
-        document.getElementById('btn-seed').classList.add('hidden'); // Ocultar el botón después de subir
+        document.getElementById('btn-seed').classList.add('hidden');
     } catch (error) {
         console.error("Error al subir datos: ", error);
         alert("Hubo un error al subir los datos. Revisa la consola.");
@@ -92,7 +85,7 @@ window.pedirCodigo = function() {
         isAdmin = true;
         document.getElementById('tab-gastos').classList.remove('hidden');
         document.getElementById('tab-aportes').classList.remove('hidden');
-        document.getElementById('btn-seed').classList.remove('hidden'); // Mostrar botón de subida inicial
+        document.getElementById('btn-seed').classList.remove('hidden');
         document.getElementById('btn-unlock').classList.add('hidden');
         document.getElementById('btn-lock').classList.remove('hidden');
         showTab('gastos');
@@ -119,12 +112,17 @@ function calcularYRenderizar() {
     if (!tbody) return;
     tbody.innerHTML = '';
     
-    let acumulado = 0;
+    // CAMBIO CLAVE: Arrancamos el acumulado desde el saldo anterior
+    let acumulado = saldoAnterior; 
 
     datosMeses.forEach((data, index) => {
         const totalExtras = data.gastos.extras.reduce((sum, item) => sum + item.monto, 0);
         const totalEgresos = data.gastos.epec + data.gastos.internet + data.gastos.seguro + totalExtras;
-        const totalIngresos = Object.values(data.aportes).reduce((sum, val) => sum + val, 0);
+
+        const totalAportes = Object.values(data.aportes).reduce((sum, val) => sum + val, 0);
+        const otrosIngresos = data.otrosIngresos || 0;
+        const totalIngresos = totalAportes + otrosIngresos;
+
         const saldoMes = totalIngresos - totalEgresos;
         acumulado += saldoMes;
 
@@ -139,11 +137,13 @@ function calcularYRenderizar() {
                 ${data.gastos.extras.map(e => `${e.descripcion}: $${e.monto.toLocaleString('es-AR')}`).join('<br>') || '-'}
             </td>
             <td class="px-4 py-3 text-right font-semibold text-red-600">$${totalEgresos.toLocaleString('es-AR')}</td>
-            <td class="px-4 py-3 text-right font-semibold text-green-600">$${totalIngresos.toLocaleString('es-AR')}</td>
+            <td class="px-4 py-3 text-right font-semibold text-green-600">$${totalAportes.toLocaleString('es-AR')}</td>
+            <td class="px-4 py-3 text-right text-green-700">$${otrosIngresos.toLocaleString('es-AR')}</td>
+            <td class="px-4 py-3 text-right font-bold text-green-800 bg-green-50">$${totalIngresos.toLocaleString('es-AR')}</td>
             <td class="px-4 py-3 text-right font-bold ${saldoMes >= 0 ? 'text-green-700' : 'text-red-700'}">
                 ${saldoMes >= 0 ? '+' : ''}$${saldoMes.toLocaleString('es-AR')}
             </td>
-            <td class="px-4 py-3 text-right font-bold ${acumulado >= 0 ? 'text-blue-700' : 'text-red-700'}">
+            <td class="px-4 py-3 text-right font-bold ${acumulado >= 0 ? 'text-blue-700' : 'text-red-700'} bg-blue-50">
                 $${acumulado.toLocaleString('es-AR')}
             </td>
         `;
@@ -218,6 +218,7 @@ function cargarDatosFormularioGastos() {
     document.getElementById('gasto-epec').value = data.gastos.epec || '';
     document.getElementById('gasto-internet').value = data.gastos.internet || '';
     document.getElementById('gasto-seguro').value = data.gastos.seguro || '';
+    document.getElementById('gasto-otros-ingresos').value = data.otrosIngresos || ''; 
     
     const listaExtras = document.getElementById('lista-extras');
     listaExtras.innerHTML = '';
@@ -258,13 +259,14 @@ async function guardarGastos(e) {
         seguro: parseFloat(document.getElementById('gasto-seguro').value) || 0,
         extras: extras
     };
+    
+    datosMeses[index].otrosIngresos = parseFloat(document.getElementById('gasto-otros-ingresos').value) || 0;
 
-    // Guardar en Firebase
     const data = datosMeses[index];
     const docId = `2026-${data.mes}`;
     try {
         await setDoc(doc(db, "registros_mensuales", docId), data, { merge: true });
-        alert('Gastos guardados y sincronizados en la nube');
+        alert('Gastos y Otros Ingresos guardados y sincronizados');
     } catch (error) {
         console.error("Error al guardar: ", error);
         alert('Error al guardar en la nube');
@@ -281,7 +283,6 @@ async function guardarAportes(e) {
 
     datosMeses[index].aportes[vecino] = monto;
     
-    // Guardar en Firebase
     const data = datosMeses[index];
     const docId = `2026-${data.mes}`;
     try {

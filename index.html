@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consorcio Natania 21</title>
+    <title>Control de Gastos Vecinales 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -20,10 +20,9 @@
         <div class="max-w-6xl mx-auto flex justify-between items-center">
             <h1 class="text-2xl font-bold text-gray-800"><i class="fas fa-home text-blue-600 mr-2"></i> Gastos Vecinales 2026</h1>
             <div class="flex gap-2">
-                <!-- Botón temporal para subir los datos locales a Firebase por primera vez 
                 <button id="btn-seed" onclick="subirDatosAFirebase()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm transition hidden">
                     <i class="fas fa-cloud-upload-alt mr-1"></i> Subir Datos Iniciales
-                </button> -->
+                </button>
                 
                 <button id="btn-unlock" onclick="pedirCodigo()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition">
                     <i class="fas fa-lock mr-1"></i> Modo Edición
@@ -40,7 +39,7 @@
         <div class="flex space-x-6 border-b border-gray-300 overflow-x-auto">
             <button onclick="showTab('resumen')" id="tab-resumen" class="pb-2 tab-active whitespace-nowrap"><i class="fas fa-chart-line mr-1"></i> Resumen General</button>
             <button onclick="showTab('detalle')" id="tab-detalle" class="pb-2 tab-inactive whitespace-nowrap"><i class="fas fa-user-friends mr-1"></i> Aportes por Vecino</button>
-            <button onclick="showTab('gastos')" id="tab-gastos" class="pb-2 tab-inactive hidden whitespace-nowrap"><i class="fas fa-file-invoice-dollar mr-1"></i> Cargar Gastos</button>
+            <button onclick="showTab('gastos')" id="tab-gastos" class="pb-2 tab-inactive hidden whitespace-nowrap"><i class="fas fa-file-invoice-dollar mr-1"></i> Cargar Gastos / Ingresos</button>
             <button onclick="showTab('aportes')" id="tab-aportes" class="pb-2 tab-inactive hidden whitespace-nowrap"><i class="fas fa-hand-holding-usd mr-1"></i> Cargar Aportes</button>
         </div>
     </div>
@@ -60,10 +59,12 @@
                                 <th class="px-4 py-3 text-right">Internet</th>
                                 <th class="px-4 py-3 text-right">Seguro</th>
                                 <th class="px-4 py-3 text-right">Extras</th>
-                                <th class="px-4 py-3 text-right font-bold text-red-300">Egresos</th>
-                                <th class="px-4 py-3 text-right font-bold text-green-300">Ingresos</th>
+                                <th class="px-4 py-3 text-right font-bold text-red-300">Total Egresos</th>
+                                <th class="px-4 py-3 text-right font-bold text-green-300">Aportes Vecinos</th>
+                                <th class="px-4 py-3 text-right font-bold text-green-300">Otros Ingresos</th>
+                                <th class="px-4 py-3 text-right font-bold text-green-200">Ingresos Totales</th>
                                 <th class="px-4 py-3 text-right font-bold text-yellow-300">Saldo Mes</th>
-                                <th class="px-4 py-3 text-right font-bold">Acumulado</th>
+                                <th class="px-4 py-3 text-right font-bold text-blue-300">Acumulado</th>
                             </tr>
                         </thead>
                         <tbody id="tabla-resumen" class="divide-y divide-gray-200"></tbody>
@@ -88,10 +89,10 @@
             </div>
         </section>
 
-        <!-- VISTA CARGA DE GASTOS -->
+        <!-- VISTA CARGA DE GASTOS E INGRESOS -->
         <section id="view-gastos" class="hidden bg-white p-6 rounded-lg shadow">
-            <h2 class="text-xl font-bold mb-4">Cargar Gastos del Mes</h2>
-            <form id="form-gastos" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h2 class="text-xl font-bold mb-4">Cargar Gastos y Otros Ingresos del Mes</h2>
+            <form id="form-gastos" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <label class="block text-sm font-medium">Mes</label>
                     <select id="gasto-mes" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border"></select>
@@ -108,15 +109,20 @@
                     <label class="block text-sm font-medium">Seguro ($)</label>
                     <input type="number" id="gasto-seguro" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 border">
                 </div>
+                <!-- NUEVO CAMPO -->
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-green-700 font-bold">Otros Ingresos ($)</label>
+                    <input type="number" id="gasto-otros-ingresos" class="mt-1 block w-full rounded-md border-green-300 shadow-sm p-2 border bg-green-50" placeholder="Ej: Venta de rifas, donaciones, etc.">
+                </div>
                 
-                <div class="md:col-span-2 border-t pt-4 mt-2">
+                <div class="md:col-span-3 border-t pt-4 mt-2">
                     <label class="block text-sm font-bold mb-2">Gastos Extras</label>
                     <div id="lista-extras" class="space-y-2 mb-2"></div>
                     <button type="button" onclick="agregarExtra()" class="text-sm text-blue-600 hover:text-blue-800"><i class="fas fa-plus"></i> Agregar otro extra</button>
                 </div>
 
-                <div class="md:col-span-2 mt-4">
-                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Guardar Gastos</button>
+                <div class="md:col-span-3 mt-4">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Guardar Datos del Mes</button>
                 </div>
             </form>
         </section>
@@ -148,9 +154,7 @@
 
     </main>
 
-    <!-- data.js se carga normal para definir variables globales -->
     <script src="data.js"></script>
-    <!-- app.js se carga como módulo para poder usar los imports de Firebase -->
     <script type="module" src="app.js"></script>
 </body>
 </html>
